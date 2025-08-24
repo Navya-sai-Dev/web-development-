@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Foodies — Delicious food, fast!</title>
+  <meta name="description" content="A simple, modern food website with search, category filters, and responsive cards." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="logo">🍽</div>
+        <span>Foodies</span>
+      </div>
+      <nav class="navlinks">
+        <a href="#home">Home</a>
+        <a href="#menu">Menu</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <button class="cta" id="orderNow">Order Now</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero -->
+    <section class="hero" id="home">
+      <div>
+        <h1>Fresh. Fast. Finger‑licking good.</h1>
+        <p>Discover the best dishes near you. Search by name, filter by category, and sort by rating or price.</p>
+        <div class="searchbar" role="search">
+          <input id="search" type="search" placeholder="Search dishes e.g. 'pizza', 'biryani'…" aria-label="Search dishes" />
+          <button id="clearSearch" title="Clear search">Clear</button>
+        </div>
+      </div>
+      <div class="heroimg">
+        <img alt="Tasty food collage" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1600&auto=format&fit=crop"/>
+      </div>
+    </section>
+
+    <!-- Category & sort bar -->
+    <section class="bar">
+      <div class="chips" id="chips"></div>
+      <div class="sort">
+        <label for="sort">Sort</label>
+        <select id="sort">
+          <option value="popularity">Most Popular</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating-desc">Rating: High to Low</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Grid -->
+    <section id="menu" class="grid"></section>
+
+    <footer>
+      <p>© <span id="year"></span> Foodies. Built with ♥ for a demo.</p>
+    </footer>
+  </main>
+
+  <script>
+    // --- Data ---
+    const CATEGORIES = ["All","Pizza","Burgers","Indian","Desserts","Drinks","Salads","Pasta"];
+    const DISHES = [
+      { id:1, name:"Margherita Pizza", category:"Pizza", price:299, rating:4.7, img:"https://images.unsplash.com/photo-1600628421055-4d8b9f4a2e4f?q=80&w=1200&auto=format&fit=crop", popular:true },
+      { id:2, name:"Cheese Burger", category:"Burgers", price:199, rating:4.4, img:"https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1200&auto=format&fit=crop", popular:true },
+      { id:3, name:"Chicken Biryani", category:"Indian", price:249, rating:4.8, img:"https://images.unsplash.com/photo-1550547660-eee4f4f3e78a?q=80&w=1200&auto=format&fit=crop", popular:true },
+      { id:4, name:"Chocolate Lava Cake", category:"Desserts", price:149, rating:4.6, img:"https://images.unsplash.com/photo-1606313564200-e75d5e30476b?q=80&w=1200&auto=format&fit=crop" },
+      { id:5, name:"Iced Latte", category:"Drinks", price:129, rating:4.2, img:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1200&auto=format&fit=crop" },
+      { id:6, name:"Greek Salad", category:"Salads", price:179, rating:4.1, img:"https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=1200&auto=format&fit=crop" },
+      { id:7, name:"Spaghetti Carbonara", category:"Pasta", price:229, rating:4.5, img:"https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642?q=80&w=1200&auto=format&fit=crop" },
+      { id:8, name:"Paneer Tikka", category:"Indian", price:219, rating:4.3, img:"https://images.unsplash.com/photo-1604908177071-927c4a0b8152?q=80&w=1200&auto=format&fit=crop" },
+      { id:9, name:"Veggie Burger", category:"Burgers", price:169, rating:4.0, img:"https://images.unsplash.com/photo-1550547660-67a1819a6c44?q=80&w=1200&auto=format&fit=crop" },
+      { id:10, name:"Tiramisu", category:"Desserts", price:199, rating:4.7, img:"https://images.unsplash.com/photo-1478749487485-6bdc6eedf4c7?q=80&w=1200&auto=format&fit=crop" },
+      { id:11, name:"Mango Lassi", category:"Drinks", price:99, rating:4.4, img:"https://images.unsplash.com/photo-1604908554027-9f7e8d5f0ca5?q=80&w=1200&auto=format&fit=crop" },
+      { id:12, name:"Caesar Salad", category:"Salads", price:159, rating:4.2, img:"https://images.unsplash.com/photo-1551892374-ecf8754cf8e7?q=80&w=1200&auto=format&fit=crop" },
+    ];
+
+    // --- State ---
+    const state = {
+      q: "",
+      category: "All",
+      sort: "popularity",
+    };
+
+    // --- Utils ---
+    const el = sel => document.querySelector(sel);
+    const fmtPrice = p => ₹${p.toLocaleString('en-IN')};
+    const stars = (n) => "★★★★★☆☆☆☆☆".slice(5 - Math.round(n), 10 - Math.round(n));
+
+    // --- Render chips ---
+    const chipsWrap = el('#chips');
+    CATEGORIES.forEach(cat => {
+      const c = document.createElement('button');
+      c.className = 'chip' + (cat===state.category ? ' active' : '');
+      c.textContent = cat;
+      c.setAttribute('data-cat', cat);
+      c.addEventListener('click', () => { state.category = cat; [...chipsWrap.children].forEach(x=>x.classList.remove('active')); c.classList.add('active'); render(); });
+      chipsWrap.appendChild(c);
+    });
+
+    // --- Search & sort handlers ---
+    el('#search').addEventListener('input', (e)=>{ state.q = e.target.value.trim().toLowerCase(); render(); });
+    el('#clearSearch').addEventListener('click', ()=>{ el('#search').value=''; state.q=''; render(); });
+    el('#sort').addEventListener('change', (e)=>{ state.sort = e.target.value; render(); });
+
+    // --- Render menu grid ---
+    const grid = el('#menu');
+    function render(){
+      let items = [...DISHES];
+      if(state.category !== 'All') items = items.filter(d => d.category === state.category);
+      if(state.q) items = items.filter(d => d.name.toLowerCase().includes(state.q));
+
+      switch(state.sort){
+        case 'price-asc': items.sort((a,b)=> a.price - b.price); break;
+        case 'price-desc': items.sort((a,b)=> b.price - a.price); break;
+        case 'rating-desc': items.sort((a,b)=> b.rating - a.rating); break;
+        default: items.sort((a,b)=> (b.popular?1:0) - (a.popular?1:0));
+      }
+
+      grid.innerHTML = items.map(d => `
+        <article class="card" aria-label="${d.name}">
+          <div class="img">
+            <img alt="${d.name}" loading="lazy" src="${d.img}"/>
+            <span class="tag">${d.category}</span>
+          </div>
+          <div class="content">
+            <div class="title">
+              <h3>${d.name}</h3>
+              <span class="stars" title="Rating ${d.rating}">★ ${d.rating}</span>
+            </div>
+            <p class="muted">${d.category} • ${d.rating >= 4.5 ? 'Top Rated' : 'Customer Favorite'}</p>
+            <div class="row">
+              <span class="price">${fmtPrice(d.price)}</span>
+              <button class="btn primary" data-id="${d.id}">Add</button>
+            </div>
+          </div>
+        </article>
+      `).join('');
+
+      // Bind Add buttons (demo only)
+      grid.querySelectorAll('button[data-id]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          btn.textContent = 'Added ✓';
+          btn.disabled = true;
+          setTimeout(()=>{ btn.textContent='Add'; btn.disabled=false; }, 1000);
+        });
+      });
+    }
+
+    // Kick things off
+    render();
+    el('#year').textContent = new Date().getFullYear();
+
+    // Order CTA scroll
+    document.getElementById('orderNow').addEventListener('click', ()=>{
+      document.getElementById('menu').scrollIntoView({ behavior:'smooth' });
+    });
+  </script>
+</body>
+</html>
